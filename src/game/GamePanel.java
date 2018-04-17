@@ -1,11 +1,13 @@
 package game;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 import javax.swing.JPanel;
 
@@ -18,10 +20,22 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private Graphics2D g2d;
     private BufferedImage image;
     
-    //Game Loop
+    //Game Loops
     private Thread thread;
     private boolean running;
     private long targetTime;
+    
+    //Game Stuff
+    private final int SIZE = 10;
+    Entity head;
+    ArrayList<Entity> snake;
+    
+    //movement
+    private int dx, dy;
+    //key input
+    private boolean up, down, right, left, start;
+    
+    
     
     
     public GamePanel() {
@@ -40,13 +54,27 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         targetTime = 1000 / fps;
     }
     @Override
-    public void keyPressed(KeyEvent arg0) {
-
+    public void keyPressed(KeyEvent e) {
+        int k = e.getKeyCode();
+        
+        if(k == KeyEvent.VK_UP) up = true;
+        if(k == KeyEvent.VK_DOWN) down = true;
+        if(k == KeyEvent.VK_LEFT) left = true;
+        if(k == KeyEvent.VK_RIGHT) right = true;
+        if(k == KeyEvent.VK_ENTER) start = true;
+     
     }
 
     @Override
-    public void keyReleased(KeyEvent arg0) {
+    public void keyReleased(KeyEvent e) {
+        int k = e.getKeyCode();
 
+        
+        if(k == KeyEvent.VK_UP) up = false;
+        if(k == KeyEvent.VK_DOWN) down = false;
+        if(k == KeyEvent.VK_LEFT) left = false;
+        if(k == KeyEvent.VK_RIGHT) right = false;
+        if(k == KeyEvent.VK_ENTER) start = false;
     }
 
     @Override
@@ -80,7 +108,19 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         image = new BufferedImage(WIDTH,HEIGHT, BufferedImage.TYPE_INT_ARGB);
         g2d = image.createGraphics();
         running = true;
+        setUplevel();
         setFPS(10);
+    }
+    private void setUplevel() {
+        snake = new ArrayList<Entity>();
+        head = new Entity(SIZE);
+        head.setPosition(WIDTH / 2, HEIGHT / 2);
+        snake.add(head);
+        for(int i =1; i < 1; i++) {
+            Entity e = new Entity(SIZE);
+            e.setPosition(head.getX() + (i * SIZE), head.getY());
+            snake.add(e);
+        }
     }
     private void requestRender() {
         render(g2d);
@@ -89,10 +129,42 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         g.dispose();
     }
     private void update() {
-        
+        if(up && dy == 0) {
+            dy = -SIZE;
+            dx = 0;
+        }
+        if(down && dy == 0) {
+            dy = SIZE;
+            dx = 0;
+        }
+        if(left && dx == 0) {
+            dy = 0;
+            dx = -SIZE;
+        }
+        if(right && dx == 0) {
+            dy = 0;
+            dx = SIZE;
+        }
+        if(dx != 0 || dy != 0) {
+            for(int i = snake.size() - 1; i > 0; i--) {
+                snake.get(i).setPosition(
+                        snake.get(i - 1).getX(),
+                        snake.get(i - 1).getY());
+            }
+            head.move(dx,  dy);
+        }
+        if(head.getX() < 0) head.setX(WIDTH);
+        if(head.getY() < 0) head.setY(HEIGHT);
+        if(head.getX() > WIDTH) head.setX(0);
+        if(head.getY() > HEIGHT) head.setY(0);
+
     }
     public void render(Graphics2D g2d) {
         g2d.clearRect(0,  0,  WIDTH, HEIGHT);
+        g2d.setColor(Color.GREEN);
+        for(Entity e : snake) {
+            e.render(g2d);
+        }
     }
     
     
